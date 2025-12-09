@@ -1,0 +1,1 @@
+python -m daphne network_platform.asgi:application --port 8000

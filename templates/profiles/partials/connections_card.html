@@ -1,0 +1,31 @@
+<div class="side-card">
+    <div class="side-header">
+        <span class="icon-circle" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="presentation">
+                <path d="M12 12a4 4 0 1 0-4-4 4.005 4.005 0 0 0 4 4Zm0 2c-3.33 0-6 1.34-6 3v1h12v-1c0-1.66-2.67-3-6-3Z"></path>
+            </svg>
+        </span>
+        <span class="muted">My Connections ({{ connections|length }})</span>
+    </div>
+    <div class="connection-list">
+        {% for conn in connections %}
+            <div class="connection-item connection-item-compact {% if forloop.counter > 3 %}hidden-connection{% endif %}">
+                <div class="conn-avatar">
+                    {% if conn.profile_picture %}
+                        <img src="{{ conn.profile_picture.url }}" alt="{{ conn.user.username }}">
+                    {% else %}
+                        {{ conn.user.username|slice:":2"|upper }}
+                    {% endif %}
+                </div>
+                <div class="conn-info">
+                    <p class="conn-name">{{ conn.user.get_full_name|default:conn.user.username }}</p>
+                    <p class="muted small">{{ conn.headline|default:"" }}</p>
+                </div>
+                <a class="icon-btn small chat-btn" href="{% url 'profiles:start_message' conn.id %}" title="Message">💬</a>
+            </div>
+        {% endfor %}
+    </div>
+    {% if connections|length > 3 %}
+        <button type="button" class="btn full outline view-all-connections">View all connections</button>
+    {% endif %}
+</div>

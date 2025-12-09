@@ -1,0 +1,25 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Redirecting to provider" %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <form id="social-login" method="post" action="{{ action }}">
+        {% csrf_token %}
+        {% for field in form.hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </form>
+    <script>
+        // Skip the intermediate page; immediately continue to the provider.
+        document.getElementById('social-login').submit();
+    </script>
+    <noscript>
+        <p>{% trans "Click continue to sign in with your provider." %}</p>
+        <button type="submit" form="social-login">{% trans "Continue" %}</button>
+    </noscript>
+</body>
+</html>

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static profile_extras %}
+
+{% block title %}Discover | ConnectPro{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/discover.css' %}">
+{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+    <a class="brand" href="{% url 'home' %}">
+        {% include "partials/brand_icon.html" %}
+    </a>
+    <nav class="nav-links">
+        <a class="active" href="{% url 'profiles:discover' %}">Discover</a>
+        <a href="{% url 'messaging:inbox' %}">Messages</a>
+        <a href="{% url 'profiles:detail' %}">Profile</a>
+    </nav>
+    <div class="top-actions">
+        {% include "partials/nav_user.html" %}
+        <a class="icon-btn" href="{% url 'logout' %}" title="Logout">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-9v2h9v14h-9v2h9a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+        </a>
+    </div>
+</header>
+
+<main class="discover-container">
+    <section class="limit-card">
+        <div>
+            <p class="muted">Daily Connection Limit</p>
+            <p class="strong">You have {{ stats.remaining }} out of {{ stats.daily_limit }} connections remaining today</p>
+        </div>
+        {% if profile.membership_tier != "pro" %}
+            <a class="btn outline" href="{% url 'home' %}#pricing">Upgrade Plan ({{ profile.membership_tier|title }})</a>
+        {% endif %}
+    </section>
+
+    <section class="search-card">
+        <input type="text" id="search-input" placeholder="Search by name, skills, or location..." aria-label="Search" autocomplete="off">
+    </section>
+
+    <div class="discover-grid">
+        <div class="discover-left">
+            <h2>Discover {{ discover_label }}</h2>
+            {% for cand in candidates %}
+            {% with status=connection_map|get_item:cand.id %}
+            <div class="candidate-card" data-text="{{ cand.user.get_full_name|default:cand.user.username }} {{ cand.headline|default:'' }} {{ cand.location|default:'' }} {{ cand.skills|join:' ' }}">
+                <div class="cand-main">
+                    <div class="cand-avatar">
+                        {% if cand.profile_picture %}
+                            <img src="{{ cand.profile_picture.url }}" alt="{{ cand.user.get_full_name|default:cand.user.username }}">
+                        {% else %}
+                            {{ cand.user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="cand-info">
+                        <h3>{{ cand.user.get_full_name|default:cand.user.username }}</h3>
+                        <p class="muted">{{ cand.headline|default:"Looking for connections" }}</p>
+                        <p class="muted location">{{ cand.location|default:"Remote / Unknown" }}</p>
+                        <div class="chip-row">
+                            {% for skill in cand.skills|slice:":4" %}
+                                <span class="chip rust">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="cand-actions">
+                            {% if status == "accepted" %}
+                                <button class="btn primary" disabled>Connected</button>
+                            {% elif status == "pending" %}
+                                <button class="btn primary" disabled>Pending</button>
+                            {% elif status == "incoming-pending" %}
+                                <form method="post" action="{% url 'profiles:connect_action' cand.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="accept">
+                                    <button class="btn primary" type="submit">Accept</button>
+                                </form>
+                            {% else %}
+                                {% if stats.daily_limit == "∞" or stats.remaining|default:0|add:0 > 0 %}
+                                <form method="post" action="{% url 'profiles:connect_action' cand.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="connect">
+                                    <button class="btn primary" type="submit">Connect</button>
+                                </form>
+                                {% else %}
+                                    <button class="btn primary" disabled>No connects left</button>
+                                {% endif %}
+                            {% endif %}
+                            {% if cand.share_enabled %}
+                                <a class="btn outline view-profile-btn"
+                                   data-share="true"
+                                   data-name="{{ cand.user.get_full_name|default:cand.user.username }}"
+                                   data-check-url="{% url 'profiles:check_share' cand.id %}"
+                                   href="{% url 'profiles:public' cand.id %}">View Profile</a>
+                            {% else %}
+                                <a class="btn outline view-profile-btn"
+                                   data-share="false"
+                                   data-name="{{ cand.user.get_full_name|default:cand.user.username }}"
+                                   data-check-url="{% url 'profiles:check_share' cand.id %}"
+                                   style="display:none"
+                                   href="#">View Profile</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="pill role-pill tier-{{ cand.membership_tier|default:'common' }}">
+                        {{ cand.membership_tier|default:"Common"|title }}
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% empty %}
+                <p class="muted">No candidates yet. Invite more users to join.</p>
+            {% endfor %}
+        </div>
+
+        <div class="discover-right">
+            {% include "profiles/partials/connections_card.html" %}
+
+            <div class="side-card">
+                <div class="side-header">
+                    <span class="muted">Popular Skills</span>
+                </div>
+                <div class="chip-row wrap">
+                    {% for skill in popular_skills %}
+                        <span class="chip rust">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    (function() {
+        const input = document.getElementById("search-input");
+        const cards = Array.from(document.querySelectorAll(".candidate-card"));
+        if (!input || !cards.length) return;
+        const filter = () => {
+            const q = input.value.toLowerCase().trim();
+            cards.forEach(card => {
+                const text = (card.dataset.text || card.innerText).toLowerCase();
+                const match = !q || text.includes(q);
+                card.style.display = match ? "" : "none";
+            });
+        };
+        input.addEventListener("input", filter);
+        filter();
+
+        // Handle view profile when sharing is disabled
+        document.querySelectorAll(".view-profile-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const canShare = btn.dataset.share === "true";
+                if (canShare) return;
+                e.preventDefault();
+                const url = btn.dataset.checkUrl;
+                if (!url) {
+                    const name = btn.dataset.name || "this user";
+                    alert(`You cannot view ${name}'s profile.`);
+                    btn.style.display = "none";
+                    return;
+                }
+                fetch(url, {credentials: "same-origin"})
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.share_enabled) {
+                            btn.dataset.share = "true";
+                            window.location.href = btn.getAttribute("href");
+                        } else {
+                            const name = data.name || btn.dataset.name || "this user";
+                            alert(`You cannot view ${name}'s profile.`);
+                            btn.style.display = "none";
+                            window.location.reload();
+                        }
+                    })
+                    .catch(() => {
+                        const name = btn.dataset.name || "this user";
+                        alert(`You cannot view ${name}'s profile.`);
+                        btn.style.display = "none";
+                    });
+            });
+        });
+
+        // Reveal full connections list
+        document.querySelectorAll(".view-all-connections").forEach(btn => {
+            const card = btn.closest(".side-card");
+            if (!card) return;
+            const items = Array.from(card.querySelectorAll(".connection-item-compact"));
+            const setState = (expanded) => {
+                items.forEach((item, idx) => {
+                    const shouldHide = !expanded && idx >= 3;
+                    item.classList.toggle("hidden-connection", shouldHide);
+                });
+                btn.textContent = expanded ? "View less" : "View all connections";
+                btn.dataset.expanded = expanded ? "true" : "false";
+            };
+            setState(false);
+            btn.addEventListener("click", () => {
+                const expanded = btn.dataset.expanded === "true";
+                setState(!expanded);
+            });
+        });
+    })();
+</script>
+{% endblock %}

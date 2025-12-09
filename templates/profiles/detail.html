@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile | ConnectPro{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+    {% include "partials/nav_brand.html" %}
+    <nav class="nav-links">
+        <a href="{% url 'profiles:discover' %}">Discover</a>
+        <a href="{% url 'messaging:inbox' %}">Messages</a>
+        <a class="active" href="{% url 'profiles:detail' %}">Profile</a>
+    </nav>
+    <div class="top-actions">
+        {% comment %} <button class="icon-btn" aria-label="Settings">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.14 12.94c.04-.31.07-.63.07-.94s-.03-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.14 7.14 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.5.43l-.36 2.54c-.6.23-1.16.54-1.68.9l-2.39-.96a.5.5 0 0 0-.61.22L2.64 8.05a.5.5 0 0 0 .12.64l2.03 1.58c-.05.31-.08.65-.08.98s.03.66.08.98l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.52.37 1.08.67 1.68.9l.36 2.54a.5.5 0 0 0 .5.43h3.8a.5.5 0 0 0 .5-.43l.36-2.54c.6-.23 1.16-.54 1.68-.9l2.39.96a.5.5 0 0 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+        </button> {% endcomment %}
+        {% include "partials/nav_user.html" %}
+        <a class="icon-btn" href="{% url 'logout' %}" title="Logout">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-9v2h9v14h-9v2h9a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+        </a>
+    </div>
+</header>
+
+<main class="profile-container">
+    <section class="profile-card two-col">
+        <div class="membership-badge tier-{{ profile.membership_tier|default:'common' }}">
+            {{ profile.membership_tier|default:"Common"|title }}
+        </div>
+        <div class="avatar" aria-label="Profile picture">
+            {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}{% if profile.updated %}?v={{ profile.updated|date:'U' }}{% endif %}" alt="Avatar of {{ profile.full_name|default:user.get_full_name|default:user.username }}" />
+            {% else %}
+                {{ profile.full_name|default:user.get_full_name|default:user.username|slice:":2"|upper }}
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h1>{{ profile.full_name|default:user.get_full_name|default:user.username }}</h1>
+            <p class="role">
+                {{ profile.headline|default:"Full Stack Developer" }}
+            </p>
+            <div class="meta">
+                <span class="meta-item">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C7 2 3 6 3 11c0 6.08 8.02 11 9 11s9-4.92 9-11c0-5-4-9-9-9Zm0 13a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
+                    <span>{{ profile.location|default:"Remote" }}</span>
+                </span>
+                <span class="meta-item">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12.713 1.5 6.75 12 1l10.5 5.75L12 12.713Zm0 2.574L1.5 9.324V17L12 23l10.5-6v-7.676L12 15.287Z"/></svg>
+                    <span>{{ user.email }}</span>
+                </span>
+                <span class="meta-item">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H5V9h14v10Z"/></svg>
+                    <span>Member since {{ user.date_joined|date:"Y/m/d" }}</span>
+                </span>
+            </div>  
+            {% if is_self %}
+            <div class="profile-actions inline">
+                <a class="btn primary" href="{% url 'profiles:edit' %}">Edit Profile</a>
+                <form method="post" action="{% url 'profiles:toggle_share' %}">
+                    {% csrf_token %}
+                    <button class="btn share-btn {% if profile.share_enabled %}primary{% endif %}" id="share-btn" type="submit">
+                        {% if profile.share_enabled %}Stop Sharing{% else %}Share Profile{% endif %}
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="stats-row">
+        <div class="stat-card">
+            <div>
+                <div class="label">Active Connections</div>
+                <div class="value">{{ stats.connections }}</div>
+            </div>
+            <div class="stat-icon" aria-hidden="true">👥</div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="label">Remaining Today</div>
+                <div class="value">{{ stats.remaining_today }}</div>
+            </div>
+            <div class="stat-icon" aria-hidden="true">💬</div>
+        </div>
+        <div class="stat-card">
+            <div>
+                <div class="label">Profile Views</div>
+                <div class="value">{{ stats.views }}</div>
+            </div>
+            <div class="stat-icon" aria-hidden="true">💼</div>
+        </div>
+    </section>
+
+
+    <div class="tabs" role="tablist">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="about">About</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="experience">Experience</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="skills">Skills</button>
+    </div>
+
+    <section class="section-card tab-panel active" data-panel="about">
+        <h2>About</h2>
+        <p>{{ profile.about|default:profile.bio|default:"About yourself" }}</p>
+    </section>
+
+    <section class="section-card tab-panel" data-panel="experience">
+        <h2>Experience</h2>
+        {% if experiences %}
+            <div class="experience-list">
+                {% for experience in experiences %}
+                <div class="xp-item">
+                    <div class="xp-line"></div>
+                    <div>
+                        <h3>{{ experience.title }}</h3>
+                        <p class="xp-company">
+                            {% if experience.company %}{{ experience.company }}{% endif %}
+                            {% if experience.location %}{% if experience.company %} • {% endif %}{{ experience.location }}{% endif %}
+                        </p>
+                        <p class="xp-duration">
+                            {% if experience.start_date %}{{ experience.start_date|date:"Y" }}{% else %}—{% endif %}
+                            -
+                            {% if experience.is_current %}Present{% elif experience.end_date %}{{ experience.end_date|date:"Y" }}{% else %}Present{% endif %}
+                        </p>
+                        {% if experience.description %}<p class="xp-desc">{{ experience.description }}</p>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="xp-empty">No experience added yet.</p>
+        {% endif %}
+    </section>
+
+    <section class="section-card tab-panel" data-panel="skills">
+        <h2>Skills</h2>
+        <div class="skill-chips">
+            {% for skill in profile.skills %}
+                <span class="chip">{{ skill }}</span>
+            {% empty %}
+                <p class="xp-empty">Add skills to showcase your strengths.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const tabs = Array.from(document.querySelectorAll(".tab"));
+        const panels = Array.from(document.querySelectorAll(".tab-panel"));
+
+        const showPanel = (target) => {
+            tabs.forEach((t) => {
+                const isActive = t.dataset.tab === target;
+                t.classList.toggle("active", isActive);
+                t.setAttribute("aria-selected", isActive ? "true" : "false");
+            });
+            panels.forEach((p) => {
+                p.classList.toggle("active", p.dataset.panel === target);
+            });
+        };
+
+        // Ensure only one panel is active on load
+        const initial = tabs.find(t => t.classList.contains("active"))?.dataset.tab || tabs[0]?.dataset.tab || "about";
+        showPanel(initial);
+
+        tabs.forEach((tab) => {
+            tab.addEventListener("click", () => showPanel(tab.dataset.tab));
+        });
+
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ConnectPro{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}page{% endblock %}">
+    {% block content %}{% endblock %}
+    {% if user.is_authenticated %}
+    <script>
+        (function() {
+            const presenceUrl = "{% url 'messaging:presence' %}";
+            // Only run on non-messaging pages. Check for namespace via data attr if present.
+            const pageNamespace = document.body?.dataset?.appNamespace || "";
+            const isMessagingPage = pageNamespace === "messaging" || window.location.pathname.startsWith("/messaging");
+            if (isMessagingPage) return;
+
+            const goOffline = () => {
+                const body = "available=0";
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([body], {type: "application/x-www-form-urlencoded"});
+                    navigator.sendBeacon(presenceUrl, blob);
+                }
+                fetch(presenceUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body,
+                    keepalive: true,
+                }).catch(() => {});
+            };
+
+            // Fire once on load to mark offline when arriving on non-messaging pages
+            goOffline();
+        })();
+    </script>
+    {% endif %}
+</body>
+</html>

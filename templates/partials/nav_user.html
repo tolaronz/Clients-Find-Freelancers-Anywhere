@@ -1,0 +1,16 @@
+{% comment %}
+User badge shown in the top bar. Expects `profile` in context.
+{% endcomment %}
+<div class="user-pill">
+    <div class="user-pill-avatar">
+        {% if profile and profile.profile_picture %}
+            <img src="{{ profile.profile_picture.url }}{% if profile.updated %}?v={{ profile.updated|date:'U' }}{% endif %}"
+                 alt="{{ profile.full_name|default:profile.user.get_full_name|default:profile.user.username }}">
+        {% else %}
+            {{ profile.full_name|default:profile.user.get_full_name|default:profile.user.username|default:user.username|slice:":2"|upper }}
+        {% endif %}
+    </div>
+    <span class="user-pill-name">
+        {{ profile.full_name|default:profile.user.get_full_name|default:profile.user.username|default:user.username }}
+    </span>
+</div>

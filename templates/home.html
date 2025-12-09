@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}ConnectPro | Home{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}">
+{% endblock %}
+{% block body_class %}page landing-page{% endblock %}
+
+{% block content %}
+<header class="topbar landing-header">
+    {% include "partials/nav_brand.html" %}
+    <nav class="nav-links">
+        <a href="{% url 'home' %}#features">Features</a>
+        <a href="{% url 'home' %}#pricing">Pricing</a>
+        <a href="{% url 'home' %}#about">About</a>
+    </nav>
+    <div class="top-actions">
+        {% if user.is_authenticated %}
+            <a class="btn primary" href="{% url 'profiles:detail' %}">Back to Profile</a>
+            <a class="btn outline" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a class="nav-link" href="{% url 'login' %}">Login</a>
+            <a class="btn primary" href="{% url 'account_signup' %}">Get Started</a>
+        {% endif %}
+    </div>
+</header>
+
+<main>
+    <section class="hero">
+      <div class="container" style="max-width: 900px;">
+        <span class="tag">⚡ Join 10,000+ entrepreneurs</span>
+        <h1>Network smarter, not harder</h1>
+        <p>Connect with the right people at the right time. A modern networking platform built for entrepreneurs who value authentic connections.</p>
+        <div class="hero-actions">
+            <a class="btn primary" href="{% url 'profiles:discover' %}">Start Connecting Free</a>
+            <a class="btn outline" href="#features">Watch Demo</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="feature-wrap">
+        <div class="container">
+            <h2>Everything you need to grow</h2>
+            <p class="muted">Simple, powerful tools for meaningful connections</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feat-icon">👥</div>
+                    <h3>Smart Matching</h3>
+                    <p>Connect with developers or clients based on your role. Find the perfect match for your next project.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon chat">💬</div>
+                    <h3>Real-time Chat</h3>
+                    <p>Instant messaging with notifications. Never miss an opportunity to connect.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feat-icon shield">🛡️</div>
+                    <h3>Quality Control</h3>
+                    <p>Daily connection limits ensure meaningful interactions, not spam.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing-wrap">
+        <div class="container">
+            <h2>Simple, transparent pricing</h2>
+            <p class="muted">Choose the plan that fits your networking needs</p>
+            <div class="pricing-grid">
+                <div class="plan-card">
+                    <h4>Free</h4>
+                    <p class="muted">Perfect for getting started</p>
+                    <div class="price">$0</div>
+                    <ul>
+                        <li>2 connections per day</li>
+                        <li>Basic profile</li>
+                        <li>Real-time messaging</li>
+                    </ul>
+                {% if user.is_authenticated %}
+                    <a class="btn outline full" href="{% url 'profiles:checkout' 'common' %}">Get Started</a>
+                {% else %}
+                    <a class="btn outline full" href="{% url 'account_signup' %}">Get Started</a>
+                {% endif %}
+                </div>
+                <div class="plan-card highlight">
+                    <div class="badge">Most Popular</div>
+                    <h4>Plus</h4>
+                <p class="muted">For active networkers</p>
+                <div class="price">$19<span>/mo</span></div>
+                <ul>
+                    <li>5 connections per day</li>
+                    <li>Enhanced profile</li>
+                    <li>Priority support</li>
+                    <li>Advanced analytics</li>
+                </ul>
+                {% if user.is_authenticated %}
+                    <a class="btn primary full" href="{% url 'profiles:checkout' 'plus' %}">Upgrade to Plus</a>
+                {% else %}
+                    <a class="btn primary full" href="{% url 'account_signup' %}">Upgrade to Plus</a>
+                {% endif %}
+            </div>
+            <div class="plan-card">
+                <h4>Pro</h4>
+                <p class="muted">For power networkers</p>
+                <div class="price">$49<span>/mo</span></div>
+                <ul>
+                    <li>Unlimited connections</li>
+                    <li>Premium profile badge</li>
+                    <li>24/7 priority support</li>
+                    <li>Advanced features</li>
+                </ul>
+                {% if user.is_authenticated %}
+                    <a class="btn outline full" href="{% url 'profiles:checkout' 'pro' %}">Go Pro</a>
+                {% else %}
+                    <a class="btn outline full" href="{% url 'account_signup' %}">Go Pro</a>
+                {% endif %}
+            </div>
+        </div>
+        </div>
+    </section>
+</main>
+
+<footer class="landing-footer" id="about">
+    <div class="container">
+        <div class="footer-brand">
+            <div class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" role="presentation">
+                    <rect x="4" y="4" width="40" height="40" rx="12" ry="12" fill="#12ced8"></rect>
+                    <path d="M28.5 18c0-3-2.5-5.5-5.5-5.5s-5.5 2.5-5.5 5.5 2.5 5.5 5.5 5.5 5.5-2.5 5.5-5.5Zm-5.5 7c-4.5 0-8.5 2.4-8.5 5.3 0 .9.7 1.7 1.7 1.7h13.6c1 0 1.7-.8 1.7-1.7 0-2.9-4-5.3-8.5-5.3Z" fill="#0b2330"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-text">ConnectPro</div>
+                <div class="muted small">The modern networking platform for entrepreneurs.</div>
+            </div>
+        </div>
+        <div class="footer-links">
+            <div>
+                <h5>Product</h5>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#about">Security</a>
+            </div>
+            <div>
+                <h5>Company</h5>
+                <a href="#about">About</a>
+                <a href="#about">Blog</a>
+                <a href="#about">Careers</a>
+            </div>
+            <div>
+                <h5>Legal</h5>
+                <a href="#about">Privacy</a>
+                <a href="#about">Terms</a>
+                <a href="#about">Contact</a>
+            </div>
+        </div>
+        <div class="footer-bottom muted small">© 2024 ConnectPro. All rights reserved.</div>
+    </div>
+</footer>
+{% endblock %}

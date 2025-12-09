@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Checkout | {{ tier|title }} Plan{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}">
+<style>
+.checkout-wrap {max-width: 560px; margin: 32px auto; padding: 24px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: #0f1b24;}
+.checkout-wrap h1 {margin-bottom: 8px;}
+.checkout-wrap p.muted {margin-bottom: 20px;}
+.payment-box {padding: 16px; border: 1px dashed rgba(255,255,255,0.15); border-radius: 10px; margin-bottom: 16px;}
+.payment-actions {display:flex; gap:12px; align-items:center; flex-wrap: wrap;}
+.token-form .form-group {margin-bottom: 12px;}
+.token-form input {width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background: #0b131a; color:#e8eef5;}
+</style>
+{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block content %}
+<header class="topbar landing-header">
+    {% include "partials/nav_brand.html" %}
+    <nav class="nav-links">
+        <a href="{% url 'home' %}#features">Features</a>
+        <a href="{% url 'home' %}#pricing">Pricing</a>
+        <a href="{% url 'home' %}#about">About</a>
+    </nav>
+    <div class="top-actions">
+        <a class="btn primary" href="{% url 'profiles:detail' %}">Back to Profile</a>
+    </div>
+</header>
+
+<main>
+    <div class="checkout-wrap">
+        <h1>Complete purchase</h1>
+        <p class="muted">You’re upgrading to the <strong>{{ tier|title }}</strong> plan. Complete payment via PayPal, then confirm to activate your plan.</p>
+
+        <div class="payment-box">
+            <p class="muted">Pay with PayPal</p>
+            <div id="paypal-button-container"></div>
+            <p class="muted small">If the button fails to load, ensure <code>PAYPAL_CLIENT_ID</code> is set in your environment or enter a PayPal order ID manually below.</p>
+        </div>
+
+        <form class="token-form" method="post" action="{% url 'profiles:upgrade_plan' tier %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="payment_token">PayPal Order ID</label>
+                <input id="payment_token" name="payment_token" type="text" placeholder="Will be filled after PayPal approval">
+            </div>
+            <button class="btn primary full" type="submit">Activate {{ tier|title }} Plan</button>
+        </form>
+    </div>
+</main>
+
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency={{ tier_price.currency }}"></script>
+<script>
+    (function() {
+        const amount = "{{ tier_price.amount }}";
+        const currency = "{{ tier_price.currency }}";
+        const tokenInput = document.getElementById("payment_token");
+        const form = document.querySelector(".token-form");
+        if (!window.paypal || !tokenInput || !form) return;
+
+        paypal.Buttons({
+            style: { shape: "pill", color: "gold", layout: "vertical", label: "paypal" },
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{ amount: { value: amount, currency_code: currency } }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    tokenInput.value = data.orderID;
+                    form.submit();
+                });
+            },
+            onError: function() {
+                alert("PayPal checkout failed to initialize. Please retry or enter your PayPal Order ID manually.");
+            }
+        }).render("#paypal-button-container");
+    })();
+</script>
+{% endblock %}

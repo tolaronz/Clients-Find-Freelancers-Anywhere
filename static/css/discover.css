@@ -1,0 +1,268 @@
+:root {
+    --panel: #111824;
+    --border: #1f2b3a;
+    --muted: #a4b7c7;
+    --text: #e9f2fb;
+    --accent: #12ced8;
+    --rust: #a53a12;
+}
+
+.discover-container {
+    max-width: 1200px;
+    margin: 24px auto 60px;
+    padding: 0 20px;
+    color: var(--text);
+}
+
+.limit-card,
+.search-card,
+.side-card,
+.candidate-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+}
+
+.limit-card {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.search-card {
+    padding: 12px;
+    margin: 12px 0 18px;
+}
+
+.search-card input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0d1521;
+    color: var(--text);
+}
+
+.discover-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+}
+
+.discover-left h2 {
+    margin: 0 0 12px;
+}
+
+.candidate-card {
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.cand-main {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.cand-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #0d1828;
+    border: 2px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.cand-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.cand-info h3 {
+    margin: 0 0 6px;
+}
+
+.cand-info p {
+    margin: 0 0 6px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.strong {
+    font-weight: 700;
+}
+
+.chip-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0;
+}
+
+.chip {
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    background: #0d1521;
+    border: 1px solid var(--border);
+}
+
+.chip.rust {
+    background: #a53a12;
+    color: #fff3ea;
+    border-color: rgba(165, 58, 18, 0.4);
+}
+
+.cand-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+}
+
+.cand-actions .btn {
+    height: 46px;
+    min-width: 120px;
+}
+
+.btn.outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.btn.full {
+    width: 100%;
+}
+
+.pill.role-pill {
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.pill.role-pill.tier-common {
+    background: rgba(240, 95, 59, 0.15);
+    color: #ff6b6b;
+    border-color: rgba(240, 95, 59, 0.4);
+}
+
+.pill.role-pill.tier-plus {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.4);
+}
+
+.pill.role-pill.tier-pro {
+    background: rgba(18, 206, 216, 0.15);
+    color: #12ced8;
+    border-color: rgba(18, 206, 216, 0.4);
+}
+
+.chat-btn {
+    margin-left: auto;
+}
+
+.discover-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.side-card {
+    padding: 14px;
+}
+
+.side-header {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(18, 206, 216, 0.12);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.connection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.connection-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.conn-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #0d1828;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+}
+
+.conn-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.conn-name {
+    margin: 0;
+    font-weight: 700;
+}
+
+.hidden-connection {
+    display: none;
+}
+
+.small {
+    font-size: 13px;
+}
+
+.wrap {
+    flex-wrap: wrap;
+}
+
+.connection-item-compact {
+    padding: 6px 0;
+}
+
+.connection-item .chat-btn {
+    margin-left: auto;
+}
+
+@media (max-width: 960px) {
+    .discover-grid {
+        grid-template-columns: 1fr;
+    }
+}

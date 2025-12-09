@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Sign up | ConnectPro{% endblock %}
+
+{% block content %}
+<div class="login-shell">
+    <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="presentation">
+                <rect x="4" y="4" width="40" height="40" rx="12" ry="12" fill="#12ced8"></rect>
+                <path d="M28.5 18c0-3-2.5-5.5-5.5-5.5s-5.5 2.5-5.5 5.5 2.5 5.5 5.5 5.5 5.5-2.5 5.5-5.5Zm-5.5 7c-4.5 0-8.5 2.4-8.5 5.3 0 .9.7 1.7 1.7 1.7h13.6c1 0 1.7-.8 1.7-1.7 0-2.9-4-5.3-8.5-5.3Z" fill="#0b2330"></path>
+            </svg>
+        </div>
+        <span class="brand-text">ConnectPro</span>
+    </div>
+
+    <div class="card">
+        <header class="card-header">
+            <h1>Create an account</h1>
+            <p>Join thousands of entrepreneurs networking daily</p>
+        </header>
+
+        <div class="social-login">
+            <a class="google-btn" href="{% provider_login_url 'google' process='login' %}">
+                <span class="google-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" role="presentation">
+                        <path fill="#e33629" d="M24 9.5c3.3 0 5.5 1.4 6.8 2.6l5-5.1C32.6 3.4 28.6 2 24 2 14.9 2 7.2 7.9 4.4 16.2l6.5 5.1C12.4 14 17.6 9.5 24 9.5z"></path>
+                        <path fill="#f8bd00" d="m45.5 24.5c0-1.7-.1-3.2-.4-4.5H24v8.4h12.1c-.5 2.8-2.1 5.1-4.5 6.6l7 5.4c4.1-3.8 6.4-9.5 6.4-16z"></path>
+                        <path fill="#587dbd" d="M10.9 28.5c-.5-1.5-.7-3.1-.7-4.5s.2-3 .7-4.5l-6.5-5.1C3.5 17 3 20.4 3 24s.5 7 1.4 9.6z"></path>
+                        <path fill="#319f43" d="M24 46c5.6 0 10.3-1.8 13.8-4.9l-7-5.4c-2 1.3-4.5 2-6.8 2-6.4 0-11.8-4.3-13.6-10.2l-6.5 5c2.8 8.3 10.5 14 20.1 14z"></path>
+                        <path fill="none" d="M3 3h42v42H3z"></path>
+                    </svg>
+                </span>
+                Continue with Google
+            </a>
+            <div class="divider"><span>OR CONTINUE WITH</span></div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="login-form" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                <div class="input-wrapper">
+                    <span class="input-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation">
+                            <path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"></path>
+                        </svg>
+                    </span>
+                    <input
+                        type="text"
+                        name="{{ form.full_name.html_name }}"
+                        id="{{ form.full_name.id_for_label }}"
+                        value="{{ form.full_name.value|default:'' }}"
+                        placeholder="{{ form.full_name.field.widget.attrs.placeholder }}"
+                        required
+                    >
+                </div>
+                {% if form.full_name.errors %}
+                    <div class="field-error">
+                        {% for error in form.full_name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation">
+                            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"></path>
+                        </svg>
+                    </span>
+                    <input
+                        type="email"
+                        name="{{ form.email.html_name }}"
+                        id="{{ form.email.id_for_label }}"
+                        value="{{ form.email.value|default:'' }}"
+                        placeholder="name@example.com"
+                        required
+                    >
+                </div>
+                {% if form.email.errors %}
+                    <div class="field-error">
+                        {% for error in form.email.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation">
+                            <path d="M12 2a5 5 0 0 0-5 5v3H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-2V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9zm-2 2h10v6H7v-6z"></path>
+                        </svg>
+                    </span>
+                    <input
+                        type="password"
+                        name="{{ form.password1.html_name }}"
+                        id="{{ form.password1.id_for_label }}"
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+                {% if form.password1.errors %}
+                    <div class="field-error">
+                        {% for error in form.password1.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation">
+                            <path d="M12 2a5 5 0 0 0-5 5v3H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-2V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9zm-2 2h10v6H7v-6z"></path>
+                        </svg>
+                    </span>
+                    <input
+                        type="password"
+                        name="{{ form.password2.html_name }}"
+                        id="{{ form.password2.id_for_label }}"
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+                {% if form.password2.errors %}
+                    <div class="field-error">
+                        {% for error in form.password2.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label>I am a</label>
+                <div class="radio-group">
+                    {% for choice in form.role %}
+                        <label class="radio-row">
+                            <input type="radio" name="{{ form.role.html_name }}" value="{{ choice.data.value }}" {% if choice.data.value == form.role.value %}checked{% endif %} required>
+                            <span class="radio-custom" aria-hidden="true"></span>
+                            <span class="radio-label">{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if form.role.errors %}
+                    <div class="field-error">
+                        {% for error in form.role.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="primary-btn">Create account</button>
+        </form>
+
+        <p class="alt-action">
+            Already have an account? <a class="link" href="{% url 'login' %}">Sign in</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

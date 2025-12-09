@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messages | ConnectPro{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/messages.css' %}">
+{% endblock %}
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<header class="topbar">
+    {% include "partials/nav_brand.html" %}
+    <nav class="nav-links">
+        <a href="{% url 'profiles:discover' %}">Discover</a>
+        <a class="active" href="{% url 'messaging:inbox' %}">Messages</a>
+        <a href="{% url 'profiles:detail' %}">Profile</a>
+    </nav>
+    <div class="top-actions">
+        {% include "partials/nav_user.html" %}
+        <a class="icon-btn" href="{% url 'logout' %}" title="Logout">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-9v2h9v14h-9v2h9a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+        </a>
+    </div>
+</header>
+
+<main class="messages-container">
+    <aside class="thread-list">
+        <div class="thread-header">
+            <h3>Messages</h3>
+            <div class="search-box">
+                <input type="text" placeholder="Search conversations..." aria-label="Search conversations">
+            </div>
+        </div>
+        <div class="threads" id="threads">
+            {% for item in threads %}
+                {% with conv=item.conv other=item.other last=item.last_msg online=item.is_online %}
+                <a class="thread {% if active and conv.id == active.id %}active{% endif %}" href="?conversation={{ conv.id }}" data-profile-id="{{ other.id }}">
+                    <div class="thread-avatar">
+                        {% if other and other.profile_picture %}
+                            <img src="{{ other.profile_picture.url }}" alt="{{ other.user.username }}">
+                        {% else %}
+                            {{ other.user.username|default:"NA"|slice:":2"|upper }}
+                        {% endif %}
+                        <span class="presence-dot {% if online %}online{% else %}offline{% endif %}"></span>
+                    </div>
+                    <div class="thread-meta">
+                        <div class="name">{{ other.user.get_full_name|default:other.user.username }}</div>
+                        <div class="snippet">
+                            {% if last %}{{ last.text|truncatechars:40 }}{% else %}Start chatting{% endif %}
+                        </div>
+                    </div>
+                    {% if last %}
+                    <div class="thread-time">{{ last.created|date:"P" }}</div>
+                    {% endif %}
+                </a>
+                {% endwith %}
+            {% empty %}
+                <p class="muted">No conversations yet.</p>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <section class="chat-panel">
+        {% if active %}
+            <div class="chat-header">
+                {% with other=active_other %}
+                    <div class="chat-avatar">
+                        {% if other and other.profile_picture %}
+                            <img src="{{ other.profile_picture.url }}" alt="{{ other.user.username }}">
+                        {% else %}
+                            {{ other.user.username|default:"NA"|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="chat-name">{{ other.user.get_full_name|default:other.user.username }}</div>
+                        <div class="muted small">Active now</div>
+                    </div>
+                {% endwith %}
+            </div>
+            <div class="chat-body">
+                {% for msg in messages %}
+                    <div class="bubble {% if msg.sender_id == profile.id %}outgoing{% else %}incoming{% endif %}">
+                        <div class="text">{{ msg.text }}</div>
+                        <div class="meta-time">{{ msg.created|date:"g:i A" }}</div>
+                    </div>
+                {% empty %}
+                    <p class="muted">No messages yet. Say hi!</p>
+                {% endfor %}
+            </div>
+            <div class="typing-banner" id="typing-banner" aria-live="polite"></div>
+            <form class="chat-input" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="conversation_id" value="{{ active.id }}">
+                <input type="text" name="text" id="chat-text" placeholder="Type a message..." required autocomplete="off" value="{{ draft_text|default_if_none:'' }}">
+                <button type="submit" class="btn primary send-btn" id="send-btn">Send</button>
+            </form>
+        {% else %}
+            <div class="chat-empty">
+                <p class="muted">Select a conversation to start messaging.</p>
+            </div>
+        {% endif %}
+    </section>
+</main>
+{% if active %}
+<script>
+    (function() {
+        const conversationId = "{{ active.id }}";
+        const chatBody = document.querySelector(".chat-body");
+        const input = document.getElementById("chat-text");
+        const form = document.querySelector(".chat-input");
+        const myName = "{{ profile.user.get_full_name|default:profile.user.username }}";
+        const getCookie = (name) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(";").shift();
+            return null;
+        };
+        const csrftoken = getCookie("csrftoken");
+
+        const proto = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${proto}://${window.location.host}/ws/chat/${conversationId}/`;
+        let socket = null;
+        let socketReady = false;
+
+        const typingBanner = document.getElementById("typing-banner");
+
+        const appendMessage = (sender, text, ts, outgoing) => {
+            const bubble = document.createElement("div");
+            bubble.className = "bubble " + (outgoing ? "outgoing" : "incoming");
+            bubble.innerHTML = `<div class="text">${text}</div><div class="meta-time">${ts}</div>`;
+            chatBody.appendChild(bubble);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        };
+
+        const typers = new Set();
+        const renderTyping = () => {
+            if (!typingBanner) return;
+            if (!typers.size) {
+                typingBanner.textContent = "";
+                return;
+            }
+            const names = Array.from(typers);
+            const label = names.length > 1 ? `${names.join(", ")} are typing...` : `${names[0]} is typing now...`;
+            typingBanner.textContent = label;
+        };
+        const showTyping = (sender, isTyping) => {
+            if (!sender) return;
+            if (isTyping) {
+                typers.add(sender);
+            } else {
+                typers.delete(sender);
+            }
+            renderTyping();
+        };
+
+        const connect = () => {
+            socket = new WebSocket(wsUrl);
+            socket.onopen = () => {
+                socketReady = true;
+            };
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.kind === "typing") {
+                    if (data.sender !== myName) {
+                        showTyping(data.sender, !!data.typing);
+                    }
+                    return;
+                }
+                const isOutgoing = data.sender === myName;
+                appendMessage(data.sender, data.text, data.timestamp, isOutgoing);
+            };
+            socket.onclose = () => {
+                socketReady = false;
+                setTimeout(connect, 3000);
+            };
+            socket.onerror = () => {
+                socketReady = false;
+            };
+        };
+        connect();
+
+        const typingUrl = "{% url 'messaging:typing' %}";
+        const draftUrl = "{% url 'messaging:draft' %}";
+
+        let lastTypingState = null;
+        const sendTyping = (typingState) => {
+            if (typingState === lastTypingState) return;
+            lastTypingState = typingState;
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({typing: typingState}));
+            }
+            const body = new URLSearchParams();
+            body.append("conversation_id", "{{ active.id }}");
+            body.append("typing", typingState ? "1" : "0");
+            fetch(typingUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: csrftoken ? {"X-CSRFToken": csrftoken} : {},
+                body,
+            }).catch(() => {});
+        };
+
+        const saveDraft = (text) => {
+            const body = new URLSearchParams();
+            body.append("conversation_id", conversationId);
+            body.append("text", text);
+            fetch(draftUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: csrftoken ? {"X-CSRFToken": csrftoken} : {},
+                body,
+            }).catch(() => {});
+        };
+
+        let draftTimer = null;
+        const saveDraftDebounced = (text) => {
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(() => saveDraft(text), 400);
+        };
+        const saveDraftImmediate = () => {
+            if (!input) return;
+            saveDraft(input.value);
+        };
+
+        if (form && input) {
+            input.addEventListener("input", () => {
+                const hasText = !!input.value.trim();
+                if (hasText) {
+                    sendTyping(true);
+                } else {
+                    showTyping("", false);
+                    sendTyping(false);
+                }
+                saveDraftDebounced(input.value);
+            });
+
+            form.addEventListener("submit", (e) => {
+                const text = input.value.trim();
+                if (!text) {
+                    e.preventDefault();
+                    return;
+                }
+                if (socketReady && socket && socket.readyState === WebSocket.OPEN) {
+                    e.preventDefault();
+                    socket.send(JSON.stringify({message: text}));
+                    input.value = "";
+                    sendTyping(false); // reset typing state after sending so future indicators fire
+                    saveDraft("");
+                } else {
+                    // Fallback to clear typing indicator for others
+                    sendTyping(false);
+                    saveDraft("");
+                } // else allow normal POST as fallback
+            });
+
+            window.addEventListener("beforeunload", saveDraftImmediate);
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "hidden") {
+                    saveDraftImmediate();
+                }
+            });
+
+        }
+        // Re-assert typing state on load if draft text exists
+        if (input && input.value.trim()) {
+            sendTyping(true);
+        }
+    })();
+</script>
+{% endif %}
+
+<script>
+    (function() {
+        const presenceUrl = "{% url 'messaging:presence' %}";
+        const threadsEl = document.getElementById("threads");
+        const dots = () => Array.from(document.querySelectorAll(".thread-avatar .presence-dot"));
+
+        const getCookie = (name) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(";").shift();
+            return null;
+        };
+        const csrftoken = getCookie("csrftoken");
+
+        const setAvailability = (available) => {
+            const body = new URLSearchParams();
+            body.append("available", available ? "1" : "0");
+            return fetch(presenceUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: csrftoken ? {"X-CSRFToken": csrftoken} : {},
+                body,
+            }).catch(() => {});
+        };
+
+        // Mark current page as available immediately
+        setAvailability(true);
+
+        const profileIds = () => {
+            if (!threadsEl) return [];
+            return Array.from(threadsEl.querySelectorAll("[data-profile-id]"))
+                .map(el => el.dataset.profileId)
+                .filter(Boolean);
+        };
+
+        const updateDots = (states) => {
+            dots().forEach(dot => {
+                const pid = dot.parentElement?.parentElement?.dataset.profileId;
+                if (!pid || !(pid in states)) return;
+                dot.classList.toggle("online", !!states[pid]);
+                dot.classList.toggle("offline", !states[pid]);
+            });
+        };
+
+        const poll = () => {
+            const ids = profileIds();
+            if (!ids.length) return;
+            const url = `${presenceUrl}?ids=${ids.join(",")}`;
+            fetch(url, {credentials: "same-origin"})
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.states) updateDots(data.states);
+                })
+                .catch(() => {});
+        };
+
+        const POLL_MS = 1000;
+        const pollInterval = setInterval(poll, POLL_MS);
+        poll();
+        // Keepalive to prevent TTL expiry while on messaging page
+        const KEEPALIVE_MS = 3000;
+        const keepAliveInterval = setInterval(() => setAvailability(true), KEEPALIVE_MS);
+
+        const goOffline = () => {
+            const body = "available=0";
+            if (navigator.sendBeacon) {
+                const blob = new Blob([body], {type: "application/x-www-form-urlencoded"});
+                navigator.sendBeacon(presenceUrl, blob);
+            }
+            fetch(presenceUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body,
+                keepalive: true,
+            }).catch(() => {});
+        };
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                setAvailability(true);
+                poll();
+            } else if (document.visibilityState === "hidden") {
+                goOffline();
+            }
+        });
+        window.addEventListener("beforeunload", goOffline);
+    })();
+</script>
+{% endblock %}
